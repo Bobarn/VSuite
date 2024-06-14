@@ -12,6 +12,8 @@ This project will make use of several technologies. At the moment of creation I 
 - Socket.io (For Messaging capabilities)
 - Phaser Game Library
 - Docker
+- Tiled (For map making)
+-
 
 # Phaser 3 + TypeScript + Vite.js Template
 > Make Phaser 3 games with TypeScript and modern frontend tooling.
