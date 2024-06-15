@@ -5,6 +5,10 @@ export default class Game extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
   private player!: Phaser.Physics.Arcade.Sprite
   private playerDirection!: string
+  private keyW!: Phaser.Input.Keyboard.Key;
+  private keyA!: Phaser.Input.Keyboard.Key;
+  private keyS!: Phaser.Input.Keyboard.Key;
+  private keyD!: Phaser.Input.Keyboard.Key;
 
   constructor() {
     super('game')
@@ -25,6 +29,13 @@ export default class Game extends Phaser.Scene {
   }
 
   create() {
+
+
+    this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    this.keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+    this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+    this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+
     const map = this.make.tilemap({ key: 'tilemap' })
     const ground1 = map.addTilesetImage('Room_Builder_Office', 'tiles1')
     const ground2 = map.addTilesetImage('Room_Builder_Floors', 'tiles2')
@@ -66,24 +77,28 @@ export default class Game extends Phaser.Scene {
     this.cameras.main.startFollow(this.player)
   }
 
+
+
   update() {
+
+
     if (!this.cursors || !this.player) {
       return
     }
     const speed = 200
-    if (this.cursors.left?.isDown) {
+    if (this.cursors.left?.isDown || this.keyA?.isDown) {
       this.player.play('player_run_left', true)
       this.player.setVelocity(-speed, 0)
       this.playerDirection = 'left'
-    } else if (this.cursors.right?.isDown) {
+    } else if (this.cursors.right?.isDown || this.keyD?.isDown) {
       this.player.play('player_run_right', true)
       this.player.setVelocity(speed, 0)
       this.playerDirection = 'right'
-    } else if (this.cursors.up?.isDown) {
+    } else if (this.cursors.up?.isDown || this.keyW?.isDown) {
       this.player.play('player_run_up', true)
       this.player.setVelocity(0, -speed)
       this.playerDirection = 'up'
-    } else if (this.cursors.down?.isDown) {
+    } else if (this.cursors.down?.isDown || this.keyS?.isDown) {
       this.player.play('player_run_down', true)
       this.player.setVelocity(0, speed)
       this.playerDirection = 'down'
