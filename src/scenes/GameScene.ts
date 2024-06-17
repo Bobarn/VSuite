@@ -1,14 +1,14 @@
 import Phaser from 'phaser'
+// import { debugDraw } from '../utils/debug'
 import { createCharacterAnimations } from '../animations/CharacterAnimations'
 
 export default class Game extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
   private player!: Phaser.Physics.Arcade.Sprite
-  private playerDirection!: string
-  private keyW!: Phaser.Input.Keyboard.Key;
-  private keyA!: Phaser.Input.Keyboard.Key;
-  private keyS!: Phaser.Input.Keyboard.Key;
-  private keyD!: Phaser.Input.Keyboard.Key;
+  private keyW!: Phaser.Input.Keyboard.Key
+  private keyA!: Phaser.Input.Keyboard.Key
+  private keyS!: Phaser.Input.Keyboard.Key
+  private keyD!: Phaser.Input.Keyboard.Key
 
   constructor() {
     super('game')
@@ -29,12 +29,10 @@ export default class Game extends Phaser.Scene {
   }
 
   create() {
-
-
-    this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-    this.keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
-    this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-    this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+    this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
+    this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A)
+    this.keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S)
+    this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
 
     const map = this.make.tilemap({ key: 'tilemap' })
     const ground1 = map.addTilesetImage('Room_Builder_Office', 'tiles1')
@@ -54,13 +52,7 @@ export default class Game extends Phaser.Scene {
 
     groundLayer.setCollisionByProperty({ collides: true })
 
-    const debugGraphics = this.add.graphics().setAlpha(0.7)
-    groundLayer.renderDebug(debugGraphics, {
-      tileColor: null,
-    //   Set color to green for extreme visibility on walls
-      collidingTileColor: new Phaser.Display.Color(0, 234, 48, 255),
-      faceColor: new Phaser.Display.Color(40, 39, 37, 255),
-    })
+    // debugDraw(groundLayer, this)
 
     this.player = this.physics.add.sprite(
       this.sys.canvas.width * 0.35,
@@ -68,43 +60,53 @@ export default class Game extends Phaser.Scene {
       'player',
       'Adam_idle_anim_19.png'
     )
-    this.playerDirection = 'down'
+    this.player.body.setSize(this.player.width * 0.5, this.player.height * 0.3)
+    this.player.body.setOffset(8, 33.6)
 
-    // Remove Character animations and place into separate file for better modularity
     createCharacterAnimations(this.anims)
 
+
+    this.player.play('player_idle_down', true)
     this.cameras.main.zoom = 1.5
-    this.cameras.main.startFollow(this.player)
+    this.cameras.main.startFollow(this.player, true)
+
+    this.physics.add.collider(this.player, groundLayer)
   }
 
-
-
-  update() {
-
-
+  update(t: number, dt: number) {
     if (!this.cursors || !this.player) {
+
       return
+
     }
     const speed = 200
-    if (this.cursors.left?.isDown || this.keyA?.isDown) {
+    if (this.cursors.left?.isDown  || this.keyA?.isDown) {
+
       this.player.play('player_run_left', true)
       this.player.setVelocity(-speed, 0)
-      this.playerDirection = 'left'
+
     } else if (this.cursors.right?.isDown || this.keyD?.isDown) {
+
       this.player.play('player_run_right', true)
       this.player.setVelocity(speed, 0)
-      this.playerDirection = 'right'
+
     } else if (this.cursors.up?.isDown || this.keyW?.isDown) {
+
       this.player.play('player_run_up', true)
       this.player.setVelocity(0, -speed)
-      this.playerDirection = 'up'
+
     } else if (this.cursors.down?.isDown || this.keyS?.isDown) {
+
       this.player.play('player_run_down', true)
       this.player.setVelocity(0, speed)
-      this.playerDirection = 'down'
+
     } else {
+
+      const parts = this.player.anims.currentAnim.key.split('_')
+      parts[1] = 'idle'
+      this.player.play(parts.join('_'), true)
       this.player.setVelocity(0, 0)
-      this.player.play(`player_idle_${this.playerDirection}`, true)
+
     }
   }
 }
