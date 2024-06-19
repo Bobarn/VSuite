@@ -2,111 +2,181 @@ import Phaser from 'phaser'
 // import { debugDraw } from '../utils/debug'
 import { createCharacterAnimations } from '../animations/CharacterAnimations'
 
+import Prop from '../props/Props'
+import '../players/Player'
+import PlayerFocus from '../players/PlayerFocus'
+
 export default class Game extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
   private player!: Phaser.Physics.Arcade.Sprite
-  private keyW!: Phaser.Input.Keyboard.Key
-  private keyA!: Phaser.Input.Keyboard.Key
-  private keyS!: Phaser.Input.Keyboard.Key
-  private keyD!: Phaser.Input.Keyboard.Key
+  private upperWalls!: Phaser.Physics.Arcade.StaticGroup
+  private props!: Phaser.Physics.Arcade.StaticGroup
+  private nonInteractiveProps!: Phaser.Physics.Arcade.StaticGroup
+  private nonInteractivePropsOnCollide!: Phaser.Physics.Arcade.StaticGroup
+  private playerFocus!: Phaser.GameObjects.Zone
 
   constructor() {
     super('game')
   }
 
   preload() {
-    this.load.image('tiles1', 'assets/map/Room_Builder_Office.png')
-    this.load.image('tiles2', 'assets/map/Room_Builder_Floors.png')
-    this.load.image('tiles3', 'assets/map/Room_Builder_Walls.png')
-    this.load.image('tiles4', 'assets/map/Generic.png')
-    this.load.image('tiles5', 'assets/map/Modern_Office_Black_Shadow.png')
-    this.load.image('tiles6', 'assets/map/Classroom_and_library.png')
+
     this.load.tilemapTiledJSON('tilemap', 'assets/map/FirstMap.json')
 
-    this.load.atlas('player', 'assets/character/adam.png', 'assets/character/adam.json')
-
     this.cursors = this.input.keyboard.createCursorKeys()
+    this.load.spritesheet('tiles_wall', 'assets/map/FloorAndGround.png', {
+      frameWidth: 32,
+      frameHeight: 32,
+    })
+
+    this.load.spritesheet('chairs', 'assets/props/Chair.png', {
+      frameWidth: 32,
+      frameHeight: 64,
+    })
+
+    this.load.spritesheet('office', 'assets/props/Modern_Office_Black_Shadow.png', {
+      frameWidth: 32,
+      frameHeight: 32,
+    })
+
+    this.load.spritesheet('generic', 'assets/props/Generic.png', {
+      frameWidth: 32,
+      frameHeight: 32,
+    })
+
+    this.load.spritesheet('player', 'assets/character/adam.png', {
+      frameWidth: 32,
+      frameHeight: 48,
+    })
   }
 
   create() {
-    this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
-    this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A)
-    this.keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S)
-    this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
+    createCharacterAnimations(this.anims)
 
     const map = this.make.tilemap({ key: 'tilemap' })
-    const ground1 = map.addTilesetImage('Room_Builder_Office', 'tiles1')
-    const ground2 = map.addTilesetImage('Room_Builder_Floors', 'tiles2')
-    const ground3 = map.addTilesetImage('Room_Builder_Walls', 'tiles3')
-    const obj1 = map.addTilesetImage('Generic', 'tiles4')
-    const obj2 = map.addTilesetImage('Modern_Office_Black_Shadow', 'tiles5')
-    const obj3 = map.addTilesetImage('Classroom_and_library', 'tiles6')
+    const FloorAndGround = map.addTilesetImage('FloorAndGround', 'tiles_wall')
 
-    const ground = [ground1, ground2, ground3, obj1]
-    const office_obj = [obj1, obj2, obj3]
-
-    const groundLayer = map.createLayer('Ground', ground)
-    map.createLayer('Obj_layer1', office_obj)
-    map.createLayer('Obj_layer2', office_obj)
-    map.createLayer('Obj_layer3', office_obj)
-
+    const groundLayer = map.createLayer('Ground', FloorAndGround)
     groundLayer.setCollisionByProperty({ collides: true })
 
     // debugDraw(groundLayer, this)
 
-    this.player = this.physics.add.sprite(
-      this.sys.canvas.width * 0.35,
-      this.sys.canvas.height * 1,
-      'player',
-      'Adam_idle_anim_19.png'
-    )
-    this.player.body.setSize(this.player.width * 0.5, this.player.height * 0.3)
-    this.player.body.setOffset(8, 33.6)
+    // import wall objects from Tiled map to Phaser
+    this.upperWalls = this.physics.add.staticGroup()
+    const upperWallLayer = map.getObjectLayer('Wall')
+    upperWallLayer.objects.forEach((wallObj) => {
+      const actualX = wallObj.x! + wallObj.width! * 0.5
+      const actualY = wallObj.y! - wallObj.height! * 0.5
+      this.upperWalls
+        .get(
+          actualX,
+          actualY,
+          'tiles_wall',
+          wallObj.gid! - map.getTileset('FloorAndGround').firstgid
+        )
+        .setDepth(actualY)
+    })
 
-    createCharacterAnimations(this.anims)
+    // import prop objects (currently chairs) from Tiled map to Phaser
+    this.props = this.physics.add.staticGroup({
+      classType: Prop,
+    })
+    const chairLayer = map.getObjectLayer('Chair')
+    chairLayer.objects.forEach((chairObj) => {
+      const actualX = chairObj.x! + chairObj.width! * 0.5
+      const actualY = chairObj.y! - chairObj.height! * 0.5
+      const prop = this.props
+        .get(actualX, actualY, 'chairs', chairObj.gid! - map.getTileset('Chair').firstgid)
+        .setDepth(actualY)
+      prop.setPropType(chairObj.type)
+    })
 
+    // import all other objects from Tiled map to Phaser
+    this.nonInteractiveProps = this.physics.add.staticGroup()
+    const objLayer = map.getObjectLayer('Objects')
+    objLayer.objects.forEach((obj) => {
+      const actualX = obj.x! + obj.width! * 0.5
+      const actualY = obj.y! - obj.height! * 0.5
+      this.nonInteractiveProps
+        .get(
+          actualX,
+          actualY,
+          'office',
+          obj.gid! - map.getTileset('Modern_Office_Black_Shadow').firstgid
+        )
+        .setDepth(actualY)
+    })
+    const genericLayer = map.getObjectLayer('GenericObjects')
+    genericLayer.objects.forEach((obj) => {
+      const actualX = obj.x! + obj.width! * 0.5
+      const actualY = obj.y! - obj.height! * 0.5
+      this.nonInteractiveProps
+        .get(actualX, actualY, 'generic', obj.gid! - map.getTileset('Generic').firstgid)
+        .setDepth(actualY)
+    })
 
-    this.player.play('player_idle_down', true)
+    // import all other objects that are collidable from Tiled map to Phaser
+    this.nonInteractivePropsOnCollide = this.physics.add.staticGroup()
+    const objOnCollideLayer = map.getObjectLayer('ObjectsOnCollide')
+    objOnCollideLayer.objects.forEach((obj) => {
+      const actualX = obj.x! + obj.width! * 0.5
+      const actualY = obj.y! - obj.height! * 0.5
+      this.nonInteractivePropsOnCollide
+        .get(
+          actualX,
+          actualY,
+          'office',
+          obj.gid! - map.getTileset('Modern_Office_Black_Shadow').firstgid
+        )
+        .setDepth(actualY)
+    })
+    const genericOnCollideLayer = map.getObjectLayer('GenericObjectsOnCollide')
+    genericOnCollideLayer.objects.forEach((obj) => {
+      const actualX = obj.x! + obj.width! * 0.5
+      const actualY = obj.y! - obj.height! * 0.5
+      this.nonInteractivePropsOnCollide
+        .get(actualX, actualY, 'generic', obj.gid! - map.getTileset('Generic').firstgid)
+        .setDepth(actualY)
+    })
+
+    this.player = this.add.player(705, 500, 'player')
+
+    this.playerFocus = new PlayerFocus(this, 0, 0, 16, 16)
+
     this.cameras.main.zoom = 1.5
     this.cameras.main.startFollow(this.player, true)
 
     this.physics.add.collider(this.player, groundLayer)
+    this.physics.add.collider(this.player, this.nonInteractivePropsOnCollide)
+    this.physics.add.overlap(
+      this.playerFocus,
+      this.props,
+      this.handlePropSelectorOverlap,
+      undefined,
+      this
+    )
+  }
+
+  private handlePropSelectorOverlap(playerFocus: any, selectionProp: any) {
+    // if the selection has not changed, do nothing
+    if (playerFocus.selectedProp === selectionProp) {
+      return
+    }
+
+    // if selection changes, clear pervious dialog
+    if (playerFocus.selectedProp) {
+      playerFocus.selectedProp.clearDialogBox()
+    }
+
+    // set selected item and set up new dialog
+    playerFocus.setSelectedProp(selectionProp)
+    selectionProp.setDialogBox('Press E to sit', 80)
   }
 
   update(t: number, dt: number) {
-    if (!this.cursors || !this.player) {
-
-      return
-
-    }
-    const speed = 200
-    if (this.cursors.left?.isDown  || this.keyA?.isDown) {
-
-      this.player.play('player_run_left', true)
-      this.player.setVelocity(-speed, 0)
-
-    } else if (this.cursors.right?.isDown || this.keyD?.isDown) {
-
-      this.player.play('player_run_right', true)
-      this.player.setVelocity(speed, 0)
-
-    } else if (this.cursors.up?.isDown || this.keyW?.isDown) {
-
-      this.player.play('player_run_up', true)
-      this.player.setVelocity(0, -speed)
-
-    } else if (this.cursors.down?.isDown || this.keyS?.isDown) {
-
-      this.player.play('player_run_down', true)
-      this.player.setVelocity(0, speed)
-
-    } else {
-
-      const parts = this.player.anims.currentAnim.key.split('_')
-      parts[1] = 'idle'
-      this.player.play(parts.join('_'), true)
-      this.player.setVelocity(0, 0)
-
+    if (this.player) {
+      this.playerFocus.update(this.player, this.cursors)
+      this.player.update(this.playerFocus, this.cursors)
     }
   }
 }
