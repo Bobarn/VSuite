@@ -170,7 +170,7 @@ export default class Game extends Phaser.Scene {
 
     // set selected item and set up new dialog
     playerFocus.setSelectedProp(selectionProp)
-    selectionProp.setDialogBox('Press E to sit', 80)
+    selectionProp.setDialogBox('Press E to sit', 75)
   }
 
   update() {

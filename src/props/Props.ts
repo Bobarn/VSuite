@@ -28,7 +28,7 @@ export default class Prop extends Phaser.Physics.Arcade.Sprite {
     this.dialogBox.add(
       this.scene.add
         .graphics()
-        .fillStyle(0xffffff, 1)
+        .fillStyle(0x9ebd9e, 1)
         .fillRoundedRect(dialogBoxX, dialogBoxY, dialogBoxWidth, dialogBoxHeight, 3)
         .lineStyle(2, 0x000000, 1)
         .strokeRoundedRect(dialogBoxX, dialogBoxY, dialogBoxWidth, dialogBoxHeight, 3)

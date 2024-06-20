@@ -54,7 +54,7 @@ export default class PlayerFocus extends Phaser.GameObjects.Zone {
   }
 
   setSelectedProp(Prop: Prop) {
-    console.log(Prop)
+    // console.log('Selected Prop:', Prop)
     this._selectedProp = Prop
   }
 
