@@ -173,7 +173,7 @@ export default class Game extends Phaser.Scene {
     selectionProp.setDialogBox('Press E to sit', 80)
   }
 
-  update(t: number, dt: number) {
+  update() {
     if (this.player) {
       this.playerFocus.update(this.player, this.cursors)
       this.player.update(this.playerFocus, this.cursors)

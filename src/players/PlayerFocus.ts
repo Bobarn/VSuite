@@ -24,16 +24,21 @@ export default class PlayerFocus extends Phaser.GameObjects.Zone {
     if (player.playerState === PlayerState.SITTING) {
       return
     }
+    const keyW = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W)
+    const keyA = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A)
+    const keyS = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S)
+    const keyD = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
+
 
     // update player selection box position so that it's always in front of the player
     const { x, y } = player
-    if (cursors.left?.isDown) {
+    if (cursors.left?.isDown || keyA?.isDown) {
       this.setPosition(x - 32, y)
-    } else if (cursors.right?.isDown) {
+    } else if (cursors.right?.isDown || keyD?.isDown) {
       this.setPosition(x + 32, y)
-    } else if (cursors.up?.isDown) {
+    } else if (cursors.up?.isDown || keyW?.isDown) {
       this.setPosition(x, y - 32)
-    } else if (cursors.down?.isDown) {
+    } else if (cursors.down?.isDown || keyS?.isDown) {
       this.setPosition(x, y + 32)
     }
     /**
