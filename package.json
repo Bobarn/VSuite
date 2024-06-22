@@ -4,7 +4,8 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"start": "vite",
+		"start": "vite src/client/index.html --port 8000",
+		"start-server": "nodemon --exec ts-node ./src/server/index.ts --project ./tsconfig.json",
 		"build": "tsc && vite build",
 		"preview": "vite preview"
 	},
@@ -22,12 +23,17 @@
 		"vite": "^3.1.0"
 	},
 	"dependencies": {
+		"@babel/core": "^7.24.7",
+		"@babel/node": "^7.24.7",
+		"@babel/preset-env": "^7.24.7",
 		"@colyseus/arena": "^0.14.25",
 		"@colyseus/monitor": "^0.15.6",
+		"@types/node": "^20.14.7",
 		"colyseus": "^0.15.17",
 		"colyseus.js": "^0.15.24",
 		"cors": "^2.8.5",
 		"express": "^4.19.2",
+		"nodemon": "^3.1.4",
 		"phaser": "^3.55.2"
 	}
 }
